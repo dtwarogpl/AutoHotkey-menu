@@ -6,17 +6,20 @@ Tested on AutoHotkey version 1.1.36.02. ✔️
 
 ## How to Run 🏃‍♂️
 
-1. Download and install AutoHotkey from [here](https://www.autohotkey.com/).
-2. Save the `menu.ahk` file to your computer.
-3. Double-click on the `menu.ahk` file to run the script.
-4. On first run, the script will prompt you to enter your OpenAI API key. Enter it and save. 🔑
+1. Clone the repository using the following command:
+```
+git clone https://github.com/dtwarogpl/AutoHotkey-menu.git
+```
+3. Open the downloaded folder containing the script files.
+4. Run the `menu.ahk` file with AutoHotkey.
+5. On first run, the script will prompt you to enter your OpenAI API key. Enter it and save. 🔑
 
 ## Features ✨
 
 - **Fix Spelling**: Correct spelling mistakes in copied text.
 - **Translate**: Translate the copied text to Polish or English based on the source text. 🌍
 
-**Create Custom Features**: You can easily create your own custom features by exploring the script code. The script is designed to be easily extendable, allowing you to add new text processing functionalities according to your needs. Just dive into the code and start experimenting! 💡
+**Create Custom Features**: You can easily create your own custom features by exploring the script 
 
 ## Usage 🧑‍💻
 
