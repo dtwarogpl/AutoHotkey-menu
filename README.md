@@ -16,6 +16,7 @@ git clone https://github.com/dtwarogpl/AutoHotkey-menu.git
 
 ## Features ✨
 
+- **Ask GPT**: Pass text to gpt and paste the answer.
 - **Fix Spelling**: Correct spelling mistakes in copied text.
 - **Translate**: Translate the copied text to Polish or English based on the source text. 🌍
 
