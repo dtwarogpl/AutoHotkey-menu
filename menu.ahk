@@ -43,7 +43,7 @@ API_KEY := OPENAI_API_KEY
 Menu, MyMenu, Add, Fix spelling, FixSpelling
 Menu, MyMenu, Add, Translate, Translate
 
-^d::
+!d::
     MouseGetPos, MouseX, MouseY
     Menu, MyMenu, Show, % MouseX, % MouseY
 return
