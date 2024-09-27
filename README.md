@@ -1,6 +1,7 @@
 # AutoHotkey OpenAI Text Processing ⌨️🔠
 
-![image](https://github.com/user-attachments/assets/25ff8862-aa31-4e00-acac-d20becc7aab5)
+![image](https://github.com/user-attachments/assets/83f2da38-e3ea-4bc8-9920-08308de1d792)
+
 
 
 This AutoHotkey script utilizes the OpenAI API to perform text processing tasks like fixing spelling mistakes and translation. It provides a convenient way to interact with the OpenAI API through simple hotkeys. 🚀
