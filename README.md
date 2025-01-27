@@ -1,5 +1,9 @@
 # AutoHotkey OpenAI Text Processing ⌨️🔠
 
+![image](https://github.com/user-attachments/assets/83f2da38-e3ea-4bc8-9920-08308de1d792)
+
+
+
 This AutoHotkey script utilizes the OpenAI API to perform text processing tasks like fixing spelling mistakes and translation. It provides a convenient way to interact with the OpenAI API through simple hotkeys. 🚀
 
 Tested on AutoHotkey version 1.1.36.02. ✔️
@@ -16,6 +20,7 @@ git clone https://github.com/dtwarogpl/AutoHotkey-menu.git
 
 ## Features ✨
 
+- **Ask GPT**: Pass text to gpt and paste the answer.
 - **Fix Spelling**: Correct spelling mistakes in copied text.
 - **Translate**: Translate the copied text to Polish or English based on the source text. 🌍
 
