@@ -33,6 +33,8 @@ SetTitleMatchMode, 2
 #SingleInstance  
 
 global MODEL_ENDPOINT := "https://api.openai.com/v1/chat/completions"
+global n8n_Endpoint := "https://api.twarog.eu/webhook/3d20e321-771b-4d7b-9fd3-861a86700380"
+global DefaultHeaders := {"Content-Type": "application/json"}
 global MODEL_AUTOCOMPLETE_ID := "gpt-4o"
 MODEL_AUTOCOMPLETE_MAX_TOKENS := 800
 MODEL_AUTOCOMPLETE_TEMP := 0.8
@@ -42,7 +44,7 @@ API_KEY := OPENAI_API_KEY
 
 Menu, MyMenu, Add, Fix spelling, FixSpelling
 Menu, MyMenu, Add, Translate, Translate
-Menu, MyMenu, Add, AskGPT, AskGPT
+Menu, MyMenu, Add, GenerateCode, GenerateCode
 Menu, MyMenu, Add, To_Snake_Case, To_Snake_Case
 Menu, MyMenu, Add, To_Unit_Test_Name, To_Unit_Test_Name
 Menu, MyMenu, Add, Add_emoji, Add_emoji
@@ -55,20 +57,14 @@ return
 FixSpelling:
    SetSystemCursor()  ; Set the cursor
    GetText(CopiedText, "Cut")
-   PromptText := "Please correct the text I'm providing. Your job is to identify and amend any typos, misspellings, missing words, etc., regardless of the language it's in. It's important that the language of the original text be maintained in the corrected version. You're allowed to change the word order where necessary for coherence, but remember to keep the original intent of the text intact. The output should be just the corrected text, with no additional comments or markings. \r\n ###Text to correct: \r\n "
-   CombinedText := PromptText . CopiedText
-url := MODEL_ENDPOINT
+
 bodyJson := "{"
-    . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(CombinedText, """", "\""") . """}]"
-    . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
-    . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
+    . """type"": ""fix_spelling"","
+    . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
     . "}"
 
-   headers := {"Content-Type": "application/json", "Authorization": "Bearer " . API_KEY}
-   response := http.POST(url, bodyJson, headers, {Object:true, Encoding:"UTF-8"})
-   obj :=json_toobj( response.Text)
-   PutText(obj.choices[1].message.content, "Cut")  
+response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object:true, Encoding:"UTF-8"})
+PutText(response.Text, "Cut")
    TrayTip
    RestoreCursors() ; Restore the cursor
 return
@@ -76,42 +72,29 @@ return
 Translate:
    SetSystemCursor()  ; Set the cursor
    GetText(CopiedText, "Cut")
-   PromptText := "Please translate this text to Polish Or English (you shoud decide the direction by reckognizing the source text). You're allowed to change the word order where necessary for coherence, but remember to keep the original intent of the text intact. The output should be just the corrected text, with no additional comments or markings. \r\n ###Text to translate: \r\n "
-   CombinedText := PromptText . CopiedText
-   url := MODEL_ENDPOINT
-  
+
 bodyJson := "{"
-    . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(CombinedText, """", "\""") . """}]"
-    . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
-    . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
+    . """type"": ""translate"","
+    . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
     . "}"
 
-   headers := {"Content-Type": "application/json", "Authorization": "Bearer " . API_KEY}
-   response := http.POST(url, bodyJson, headers, {Object:true, Encoding:"UTF-8"})
-   obj :=json_toobj( response.Text)
-   PutText(obj.choices[1].message.content, "Cut")  
+response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object:true, Encoding:"UTF-8"})
+PutText(response.Text, "Cut")
    TrayTip
    RestoreCursors() ; Restore the cursor
 return
 
-AskGPT:
-   SetSystemCursor()  ; Set the cursor
+GenerateCode:
+    SetSystemCursor()  ; Set the cursor
    GetText(CopiedText, "Cut")
-     PromptText := "You are a professional developer assistant programmed to identify the programming language from the context provided by the user—most likely JavaScript or C#. You are tasked with implementing and providing production-quality code snippets based on user requests. Outputs should be code only, without any additional explanatory text or Markdown decoration  \r\n ###Command: \r\n "
-   CombinedText := PromptText . CopiedText
-   url := MODEL_ENDPOINT
-   bodyJson := "{"
-    . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(CombinedText, """", "\""") . """}]"
-    . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
-    . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
+
+bodyJson := "{"
+    . """type"": ""ask_gpt"","
+    . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
     . "}"
 
-   headers := {"Content-Type": "application/json", "Authorization": "Bearer " . API_KEY}
-   response := http.POST(url, bodyJson, headers, {Object:true, Encoding:"UTF-8"})
-   obj :=json_toobj( response.Text)
-   PutText(obj.choices[1].message.content, "Cut")  
+response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object:true, Encoding:"UTF-8"})
+PutText(response.Text, "Cut")
    TrayTip
    RestoreCursors() ; Restore the cursor
 return
@@ -124,7 +107,7 @@ To_Snake_Case:
    url := MODEL_ENDPOINT
    bodyJson := "{"
     . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(CombinedText, """", "\""") . """}]"
+    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(StrReplace(StrReplace(CombinedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """}]"
     . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
     . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
     . "}"
@@ -145,7 +128,7 @@ To_Unit_Test_Name:
    url := MODEL_ENDPOINT
    bodyJson := "{"
     . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(CombinedText, """", "\""") . """}]"
+    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(StrReplace(StrReplace(CombinedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """}]"
     . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
     . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
     . "}"
@@ -166,7 +149,7 @@ Add_emoji:
    url := MODEL_ENDPOINT
    bodyJson := "{"
     . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(CombinedText, """", "\""") . """}]"
+    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(StrReplace(StrReplace(CombinedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """}]"
     . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
     . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
     . "}"
@@ -179,6 +162,21 @@ Add_emoji:
    RestoreCursors() ; Restore the cursor
 return
 
+PerformAction(actionType) {
+    SetSystemCursor()  ; Set the cursor
+    GetText(CopiedText, "Cut")
+    
+    bodyJson := "{"
+        . """type"": """ . actionType . ""","
+        . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
+        . "}"
+    
+    response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object: true, Encoding: "UTF-8"})
+    PutText(response.Text, "Cut")
+    TrayTip
+    RestoreCursors()  ; Restore the cursor
+    return response.Text
+}
 
 GetText(ByRef MyText = "", Option = "Copy")
 {
