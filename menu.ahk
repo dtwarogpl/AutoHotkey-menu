@@ -1,3 +1,5 @@
+#MaxThreadsPerHotkey 1
+
 ; Change system cursor 
 SetSystemCursor()
 {
@@ -16,6 +18,22 @@ RestoreCursors()
    DllCall( "SystemParametersInfo", UInt, 0x57, UInt,0, UInt,0, UInt,0 )
 }
 
+#persistent
+#SingleInstance
+
+; Global variable declarations
+global API_KEY
+global MODEL_ENDPOINT
+global n8n_Endpoint
+global DefaultHeaders
+global MODEL_AUTOCOMPLETE_ID
+global MODEL_AUTOCOMPLETE_MAX_TOKENS
+global MODEL_AUTOCOMPLETE_TEMP
+global http
+
+; Initialize globals
+SetTitleMatchMode, 2     
+
 IfNotExist, settings.ini     
 {
    InputBox, OPENAI_API_KEY, Please insert your OpenAI API key, Open AI API key, , 270, 145
@@ -25,22 +43,16 @@ else
 {
    IniRead, OPENAI_API_KEY, settings.ini, OpenAI, API_KEY  
 }
-global API_KEY := OPENAI_API_KEY
 
-SetTitleMatchMode, 2     
-
-#persistent
-#SingleInstance  
-
-global MODEL_ENDPOINT := "https://api.openai.com/v1/chat/completions"
-global n8n_Endpoint := "https://api.twarog.eu/webhook/3d20e321-771b-4d7b-9fd3-861a86700380"
-global DefaultHeaders := {"Content-Type": "application/json"}
-global MODEL_AUTOCOMPLETE_ID := "gpt-4o"
+API_KEY := OPENAI_API_KEY
+MODEL_ENDPOINT := "https://api.openai.com/v1/chat/completions"
+n8n_Endpoint := "https://api.twarog.eu/webhook/3d20e321-771b-4d7b-9fd3-861a86700380"
+DefaultHeaders := {"Content-Type": "application/json"}
+MODEL_AUTOCOMPLETE_ID := "gpt-4o"
 MODEL_AUTOCOMPLETE_MAX_TOKENS := 800
 MODEL_AUTOCOMPLETE_TEMP := 0.8
 
 http := WinHttpRequest()
-API_KEY := OPENAI_API_KEY  
 
 Menu, MyMenu, Add, Fix spelling, FixSpelling
 Menu, MyMenu, Add, Translate, Translate
@@ -55,133 +67,97 @@ Menu, MyMenu, Add, Add_emoji, Add_emoji
 return
 
 FixSpelling:
-   SetSystemCursor()  ; Set the cursor
-   GetText(CopiedText, "Cut")
-
-bodyJson := "{"
-    . """type"": ""fix_spelling"","
-    . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
-    . "}"
-
-response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object:true, Encoding:"UTF-8"})
-PutText(response.Text, "Cut")
-   TrayTip
-   RestoreCursors() ; Restore the cursor
+   ProcessN8NAction("fix_spelling")
 return
 
 Translate:
-   SetSystemCursor()  ; Set the cursor
-   GetText(CopiedText, "Cut")
-
-bodyJson := "{"
-    . """type"": ""translate"","
-    . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
-    . "}"
-
-response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object:true, Encoding:"UTF-8"})
-PutText(response.Text, "Cut")
-   TrayTip
-   RestoreCursors() ; Restore the cursor
+   ProcessN8NAction("translate")
 return
 
 GenerateCode:
-    SetSystemCursor()  ; Set the cursor
-   GetText(CopiedText, "Cut")
-
-bodyJson := "{"
-    . """type"": ""ask_gpt"","
-    . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
-    . "}"
-
-response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object:true, Encoding:"UTF-8"})
-PutText(response.Text, "Cut")
-   TrayTip
-   RestoreCursors() ; Restore the cursor
+   ProcessN8NAction("ask_gpt")
 return
 
 To_Snake_Case:
-   SetSystemCursor()  ; Set the cursor
-   GetText(CopiedText, "Cut")
-   PromptText := "Please fotmat the text im providing to be a Snake_Case. Keep the original intent of the text intact, with no additional comments or markings. \r\n ###Text to correct: \r\n "
-   CombinedText := PromptText . CopiedText
-   url := MODEL_ENDPOINT
-   bodyJson := "{"
-    . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(StrReplace(StrReplace(CombinedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """}]"
-    . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
-    . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
-    . "}"
-
-   headers := {"Content-Type": "application/json", "Authorization": "Bearer " . API_KEY}
-   response := http.POST(url, bodyJson, headers, {Object:true, Encoding:"UTF-8"})
-   obj :=json_toobj( response.Text)
-   PutText(obj.choices[1].message.content, "Cut")  
-   TrayTip
-   RestoreCursors() ; Restore the cursor
+   prompt := "Please fotmat the text im providing to be a Snake_Case. Keep the original intent of the text intact, with no additional comments or markings. `r`n ###Text to correct: `r`n "
+   ProcessText(prompt)
 return
 
 To_Unit_Test_Name:
-   SetSystemCursor()  ; Set the cursor
-   GetText(CopiedText, "Cut")
-   PromptText := "Convert the following text into a properly formatted C# unit test name. The format should be: Feature_UnderTest_Condition_ExpectedOutcome. \r\n Example: Input: 'All prices endpoints called with regular product by customer with club discount' \r\n Output: AllPricesEndpoints_Called_With_Regular_Product_By_CustomerWithClubDiscount_ReturnsLoyaltyDiscountedProduct ###Use the same format for the following text: \r\n "
-   CombinedText := PromptText . CopiedText
-   url := MODEL_ENDPOINT
-   bodyJson := "{"
-    . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(StrReplace(StrReplace(CombinedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """}]"
-    . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
-    . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
-    . "}"
-
-   headers := {"Content-Type": "application/json", "Authorization": "Bearer " . API_KEY}
-   response := http.POST(url, bodyJson, headers, {Object:true, Encoding:"UTF-8"})
-   obj :=json_toobj( response.Text)
-   PutText(obj.choices[1].message.content, "Cut")  
-   TrayTip
-   RestoreCursors() ; Restore the cursor
+   prompt := "Convert the following text into a properly formatted C# unit test name. The format should be: Feature_UnderTest_Condition_ExpectedOutcome. `r`n Example: Input: 'All prices endpoints called with regular product by customer with club discount' `r`n Output: AllPricesEndpoints_Called_With_Regular_Product_By_CustomerWithClubDiscount_ReturnsLoyaltyDiscountedProduct ###Use the same format for the following text: `r`n "
+   ProcessText(prompt)
 return
 
 Add_emoji:
-   SetSystemCursor()  ; Set the cursor
-   GetText(CopiedText, "Cut")
-   PromptText := "Your only task is to write exact same text starting with related emoji. \r\n ###Example: \r\n Turn lights on \r\n\💡 Turn lights on\r\n\r\n\r\n"
-   CombinedText := PromptText . CopiedText
-   url := MODEL_ENDPOINT
-   bodyJson := "{"
-    . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
-    . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(StrReplace(StrReplace(CombinedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """}]"
-    . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
-    . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
-    . "}"
-
-   headers := {"Content-Type": "application/json", "Authorization": "Bearer " . API_KEY}
-   response := http.POST(url, bodyJson, headers, {Object:true, Encoding:"UTF-8"})
-   obj :=json_toobj( response.Text)
-   PutText(obj.choices[1].message.content, "Cut")  
-   TrayTip
-   RestoreCursors() ; Restore the cursor
+   prompt := "Your only task is to write exact same text starting with related emoji. `r`n ###Example: `r`n Turn lights on `r`n\💡 Turn lights on`r`n`r`n`r`n"
+   ProcessText(prompt)
 return
 
-PerformAction(actionType) {
-    SetSystemCursor()  ; Set the cursor
-    GetText(CopiedText, "Cut")
-    
+CallOpenAI(prompt, text) {
+    CombinedText := prompt . text
+    url := MODEL_ENDPOINT
+    bodyJson := "{"
+        . """model"": """ . MODEL_AUTOCOMPLETE_ID . """"
+        . ", ""messages"": [{""role"": ""user"", ""content"": """ . StrReplace(StrReplace(StrReplace(CombinedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """}]"
+        . ", ""max_tokens"": " . MODEL_AUTOCOMPLETE_MAX_TOKENS
+        . ", ""temperature"": " . MODEL_AUTOCOMPLETE_TEMP
+        . "}"
+
+    headers := {"Content-Type": "application/json", "Authorization": "Bearer " . API_KEY}
+    response := http.POST(url, bodyJson, headers, {Object:true, Encoding:"UTF-8"})
+    obj := json_toobj(response.Text)
+    return obj.choices[1].message.content
+}
+
+CallN8N(actionType, text) {
     bodyJson := "{"
         . """type"": """ . actionType . ""","
-        . """content"": """ . StrReplace(StrReplace(StrReplace(CopiedText, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
+        . """content"": """ . StrReplace(StrReplace(StrReplace(text, """", "\"""), "`r`n", "\n"), "`n", "\n") . """"
         . "}"
-    
-    response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object: true, Encoding: "UTF-8"})
-    PutText(response.Text, "Cut")
-    TrayTip
-    RestoreCursors()  ; Restore the cursor
+
+    response := http.POST(n8n_Endpoint, bodyJson, DefaultHeaders, {Object:true, Encoding:"UTF-8"})
     return response.Text
+}
+
+ProcessN8NAction(actionType) {
+    Critical  ; Start critical section
+    SetSystemCursor()  ; Set the cursor
+    if (!GetText(CopiedText, "Cut")) {
+        RestoreCursors()
+        return
+    }
+    result := CallN8N(actionType, CopiedText)
+    if (!PutText(result, "Cut")) {
+        RestoreCursors()
+        return
+    }
+    TrayTip
+    RestoreCursors() ; Restore the cursor
+    return result
+}
+
+ProcessText(prompt) {
+    Critical  ; Start critical section
+    SetSystemCursor()  ; Set the cursor
+    if (!GetText(CopiedText, "Cut")) {
+        RestoreCursors()
+        return
+    }
+    result := CallOpenAI(prompt, CopiedText)
+    if (!PutText(result, "Cut")) {
+        RestoreCursors()
+        return
+    }
+    TrayTip
+    RestoreCursors() ; Restore the cursor
+    return result
 }
 
 GetText(ByRef MyText = "", Option = "Copy")
 {
    SavedClip := ClipboardAll
-   Clipboard =
+   Clipboard := ""
+   Sleep 50  ; Give time for clipboard to clear
    if (Option == "Copy")
    {
       Send ^c
@@ -190,35 +166,53 @@ GetText(ByRef MyText = "", Option = "Copy")
    {
       Send ^x
    }
-   ClipWait 0.5
-   if ERRORLEVEL
+   ClipWait, 2  ; Wait up to 2 seconds for the clipboard
+   if ErrorLevel
    {
+      MsgBox, Failed to get text - ClipWait timed out
       Clipboard := SavedClip
-      MyText =
-      return
+      MyText := ""
+      return false
    }
    MyText := Clipboard
+   Sleep 50  ; Give time for clipboard operation to complete
+   if (MyText = "") {
+      MsgBox, No text was captured from clipboard
+      Clipboard := SavedClip
+      return false
+   }
    Clipboard := SavedClip
-   return MyText
+   return true
 }
 
 PutText(MyText, Option = "")
 {
+   if (MyText = "") {
+      MsgBox, Attempted to put empty text
+      return false
+   }
    SavedClip := ClipboardAll 
-   Clipboard = 
-   Sleep 20
+   Clipboard := "" 
+   Sleep 50  ; Increased sleep time to ensure clipboard is cleared
    Clipboard := MyText
+   ClipWait, 2  ; Wait up to 2 seconds for the clipboard to contain data
+   if ErrorLevel  ; ClipWait timed out
+   {
+      MsgBox, Failed to set clipboard - ClipWait timed out
+      Clipboard := SavedClip
+      return false
+   }
+   Sleep 50  ; Give the system time to process the clipboard
    if (Option == "AddSpace")
    {
       Send {Right}
       Send {Space}
    }
    Send ^v
-   Sleep 100
+   Sleep 150  ; Increased sleep time to ensure paste completes
    Clipboard := SavedClip
-   return
+   return true
 }
-
 
 json_toobj( str ) {
 
